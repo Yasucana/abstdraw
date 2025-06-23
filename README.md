@@ -7,12 +7,12 @@ reproducible for the same inputs.
 
 ## Requirements
 
-- Python 3 with `matplotlib`, `numpy` and `requests`
+- Python 3 with `numpy` and `requests`
 
 Install the dependencies with:
 
 ```bash
-pip install matplotlib numpy requests
+pip install numpy requests
 ```
 
 ## Usage
@@ -23,4 +23,4 @@ Run the script and follow the prompts for the feeling value and words:
 python abstdraw.py
 ```
 
-A window with the generated abstract art will appear.
+The generated abstract art will be displayed as ASCII art in the terminal.

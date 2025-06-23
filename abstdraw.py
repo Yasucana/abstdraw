@@ -1,8 +1,27 @@
 import datetime
-import hashlib
 import requests
 import numpy as np
-import matplotlib.pyplot as plt
+
+
+def simple_hash(text: str) -> int:
+    """Return a 32-bit FNV-1a hash of the given text."""
+    fnv_prime = 16777619
+    hash_ = 2166136261
+    for byte in text.encode("utf-8"):
+        hash_ ^= byte
+        hash_ = (hash_ * fnv_prime) % 2 ** 32
+    return hash_
+
+
+def draw_ascii(points, width: int = 60, height: int = 30) -> None:
+    """Render points as ASCII art on the terminal."""
+    grid = [[" " for _ in range(width)] for _ in range(height)]
+    for x, y in points:
+        xi = min(width - 1, max(0, int(x * (width - 1))))
+        yi = min(height - 1, max(0, int(y * (height - 1))))
+        grid[height - 1 - yi][xi] = "*"
+    for row in grid:
+        print("".join(row))
 
 
 def get_weather():
@@ -22,7 +41,7 @@ def generate_art(feeling: int, words: str):
     weather = get_weather()
 
     seed_input = f"{date_str}-{weather}-{feeling}-{words}"
-    seed = int(hashlib.sha256(seed_input.encode()).hexdigest(), 16) % 2**32
+    seed = simple_hash(seed_input)
     rng = np.random.default_rng(seed)
 
     # generate chaotic sequence using logistic map
@@ -39,11 +58,8 @@ def generate_art(feeling: int, words: str):
     # normalize points to [0,1]
     points = (points - points.min(axis=0)) / (points.max(axis=0) - points.min(axis=0))
 
-    plt.figure(figsize=(8, 8))
-    plt.scatter(points[:, 0], points[:, 1], c=np.linspace(0, 1, len(points)), cmap="hsv", alpha=0.6, s=10)
-    plt.axis("off")
-    plt.title(f"{date_str} - {weather}\nFeeling: {feeling}\n{words}")
-    plt.show()
+    print(f"{date_str} - {weather}\nFeeling: {feeling}\n{words}")
+    draw_ascii(points)
 
 
 def main():
