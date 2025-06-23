@@ -17,6 +17,21 @@ DIGIT_MEANINGS = {
     9: "Completion - fulfillment, culmination, or wisdom",
 }
 
+# Mapping of digits to line colors. This provides visual variety based on the
+# chosen energy level digit.
+COLOR_MAP = {
+    0: "black",
+    1: "blue",
+    2: "red",
+    3: "green",
+    4: "purple",
+    5: "orange",
+    6: "brown",
+    7: "darkcyan",
+    8: "magenta",
+    9: "gold",
+}
+
 try:
     import numpy as np  # optional, used for generating points
 except Exception:  # pragma: no cover - numpy may be missing
@@ -44,16 +59,23 @@ except Exception:  # pragma: no cover - tkinter may be missing
     tk = None
 
 
-def draw_window(points, energy_level: int, words: str, meaning: str) -> None:
+def draw_window(
+    points,
+    energy_level: int,
+    words: str,
+    meaning: str,
+    color: str,
+    obstacles,
+) -> None:
     """Draw lines and golden rectangles on a Tkinter window."""
     if tk is None:  # fall back to ASCII art if tkinter is unavailable
-        draw_ascii(points)
+        draw_ascii(points, obstacles)
         return
 
     try:
         root = tk.Tk()
     except Exception:  # pragma: no cover - tk may fail in headless env
-        draw_ascii(points)
+        draw_ascii(points, obstacles)
         return
 
     phi = (1 + 5 ** 0.5) / 2
@@ -69,7 +91,7 @@ def draw_window(points, energy_level: int, words: str, meaning: str) -> None:
         xi = x * width
         yi = y * height
         if prev is not None:
-            canvas.create_line(prev[0], prev[1], xi, yi, fill="black")
+            canvas.create_line(prev[0], prev[1], xi, yi, fill=color)
         prev = (xi, yi)
 
     # draw nested golden rectangles in a style reminiscent of Rafael Araujo
@@ -83,6 +105,15 @@ def draw_window(points, energy_level: int, words: str, meaning: str) -> None:
         x0 += rect_w - rect_h
         rect_w, rect_h = rect_h, rect_w - rect_h
 
+    for x0, y0, x1, y1 in obstacles:
+        canvas.create_rectangle(
+            x0 * width,
+            y0 * height,
+            x1 * width,
+            y1 * height,
+            outline="gray",
+        )
+
     text = f"Energy: {energy_level} - {meaning}"
     canvas.create_text(10, 10, anchor="nw", text=text, fill="darkgreen")
     canvas.create_text(10, 30, anchor="nw", text=words, fill="darkgreen")
@@ -90,13 +121,20 @@ def draw_window(points, energy_level: int, words: str, meaning: str) -> None:
     root.mainloop()
 
 
-def draw_ascii(points, width: int = 60, height: int = 30) -> None:
+def draw_ascii(points, obstacles=None, width: int = 60, height: int = 30) -> None:
     """Render points as ASCII art on the terminal."""
+    if obstacles is None:
+        obstacles = []
     grid = [[" " for _ in range(width)] for _ in range(height)]
     for x, y in points:
         xi = min(width - 1, max(0, int(x * (width - 1))))
         yi = min(height - 1, max(0, int(y * (height - 1))))
         grid[height - 1 - yi][xi] = "*"
+    for x0, y0, x1, y1 in obstacles:
+        for xi in range(int(x0 * (width - 1)), int(x1 * (width - 1)) + 1):
+            for yi in range(int(y0 * (height - 1)), int(y1 * (height - 1)) + 1):
+                if 0 <= xi < width and 0 <= yi < height:
+                    grid[height - 1 - yi][xi] = "#"
     for row in grid:
         print("".join(row))
 
@@ -131,7 +169,11 @@ def generate_art(energy_level: int, words: str) -> None:
         rng = random.Random(seed)
         x = rng.random()
 
-    r = 4.0
+    # Chaos is derived from the diversity of characters in the prompt words.
+    chaos = min(1.0, len(set(words.lower())) / 10)
+
+    # logistic map parameter slightly adjusted by chaos
+    r = 3.5 + 0.5 * chaos
     points = []
     for _ in range(5000):
         x = r * x * (1 - x)
@@ -140,7 +182,7 @@ def generate_art(energy_level: int, words: str) -> None:
 
     if np is not None:
         points = np.array(points)
-        points += rng.normal(scale=0.1, size=points.shape)
+        points += rng.normal(scale=0.1 + 0.3 * chaos, size=points.shape)
         # normalize points to [0,1]
         points = (
             points - points.min(axis=0)
@@ -148,7 +190,7 @@ def generate_art(energy_level: int, words: str) -> None:
         points = points.tolist()
     else:
         def noise() -> float:
-            return rng.uniform(-0.1, 0.1)
+            return rng.uniform(-(0.1 + 0.3 * chaos), 0.1 + 0.3 * chaos)
 
         points = [(x + noise(), y + noise()) for (x, y) in points]
         xs = [p[0] for p in points]
@@ -159,9 +201,21 @@ def generate_art(energy_level: int, words: str) -> None:
         denom_y = max_y - min_y or 1.0
         points = [((x - min_x) / denom_x, (y - min_y) / denom_y) for x, y in points]
 
+    # Choose drawing color based on the energy digit
+    color = COLOR_MAP.get(energy_level % 10, "black")
+
+    # Number of obstacle rectangles is controlled by the energy level
+    obstacles = []
+    for _ in range(max(0, energy_level)):
+        x0 = rng.random() * 0.9
+        y0 = rng.random() * 0.9
+        w = rng.random() * 0.1 + 0.02
+        h = rng.random() * 0.1 + 0.02
+        obstacles.append((x0, y0, min(1.0, x0 + w), min(1.0, y0 + h)))
+
     meaning = DIGIT_MEANINGS.get(energy_level % 10, "")
     print(f"{date_str} - {weather}\nEnergy level: {energy_level}\n{meaning}\n{words}")
-    draw_window(points, energy_level, words, meaning)
+    draw_window(points, energy_level, words, meaning, color, obstacles)
 
 
 def main():
