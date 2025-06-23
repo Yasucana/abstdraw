@@ -7,9 +7,12 @@ reproducible for the same inputs.
 
 ## Requirements
 
-- Python 3 with `numpy` and `requests`
+The script only needs Python 3. It optionally uses `numpy` and `requests` for
+faster point generation and fetching the current weather. If these packages are
+not available the program will still run, but the art will be generated using
+Python's built in random module and the weather will be reported as "Unknown".
 
-Install the dependencies with:
+To enable the optional features install the extra packages:
 
 ```bash
 pip install numpy requests
