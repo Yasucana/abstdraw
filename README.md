@@ -1,9 +1,10 @@
 # abstdraw
 
-`abstdraw.py` generates chaotic abstract art based on the current date, the local
-weather (fetched from `wttr.in`), a feeling value, and a short text prompt. The
-combination of these inputs determines a random seed so the resulting art is
-reproducible for the same inputs.
+`abstdraw.py` generates abstract line art inspired by Rafael Araujo.  It uses
+the current date, the local weather (fetched from `wttr.in`), an energy level
+digit, and a short text prompt.  These values determine a random seed so the art
+is reproducible for the same inputs.  The drawing is displayed in a window using
+golden ratio proportions.
 
 ## Requirements
 
@@ -20,10 +21,11 @@ pip install numpy requests
 
 ## Usage
 
-Run the script and follow the prompts for the feeling value and words:
+Run the script and follow the prompts for the energy level and words:
 
 ```bash
 python abstdraw.py
 ```
 
-The generated abstract art will be displayed as ASCII art in the terminal.
+The generated abstract art will open in a window.  If `tkinter` is unavailable
+the program falls back to ASCII art output.

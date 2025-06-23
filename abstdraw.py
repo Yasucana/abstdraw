@@ -1,6 +1,22 @@
 import datetime
 import random
 
+
+# Mapping of digits to symbolic meanings used for the energy level.
+# These phrases are derived from Rafael Araujo inspired numerology.
+DIGIT_MEANINGS = {
+    0: "Cycle - eternity, wholeness, or return",
+    1: "Origin - singularity, identity, or will",
+    2: "Duality - balance, opposition, or relationship",
+    3: "Flow - growth, expression, or synthesis",
+    4: "Structure - stability, foundation, or order",
+    5: "Change - movement, adaptability, or life",
+    6: "Harmony - beauty, compassion, or integration",
+    7: "Mystery - insight, spirituality, or inner depth",
+    8: "Power - infinity, mastery, or flow of energy",
+    9: "Completion - fulfillment, culmination, or wisdom",
+}
+
 try:
     import numpy as np  # optional, used for generating points
 except Exception:  # pragma: no cover - numpy may be missing
@@ -20,6 +36,58 @@ def simple_hash(text: str) -> int:
         hash_ ^= byte
         hash_ = (hash_ * fnv_prime) % 2 ** 32
     return hash_
+
+
+try:
+    import tkinter as tk  # pragma: no cover - GUI may be unavailable
+except Exception:  # pragma: no cover - tkinter may be missing
+    tk = None
+
+
+def draw_window(points, energy_level: int, words: str, meaning: str) -> None:
+    """Draw lines and golden rectangles on a Tkinter window."""
+    if tk is None:  # fall back to ASCII art if tkinter is unavailable
+        draw_ascii(points)
+        return
+
+    try:
+        root = tk.Tk()
+    except Exception:  # pragma: no cover - tk may fail in headless env
+        draw_ascii(points)
+        return
+
+    phi = (1 + 5 ** 0.5) / 2
+    width = 800
+    height = int(width / phi)
+
+    root.title("Abstract Energy Drawing")
+    canvas = tk.Canvas(root, width=width, height=height, bg="white")
+    canvas.pack()
+
+    prev = None
+    for x, y in points[:2000]:
+        xi = x * width
+        yi = y * height
+        if prev is not None:
+            canvas.create_line(prev[0], prev[1], xi, yi, fill="black")
+        prev = (xi, yi)
+
+    # draw nested golden rectangles in a style reminiscent of Rafael Araujo
+    rect_w = width
+    rect_h = rect_w / phi
+    x0, y0 = (width - rect_w) / 2, (height - rect_h) / 2
+    for _ in range(6):
+        x1 = x0 + rect_w
+        y1 = y0 + rect_h
+        canvas.create_rectangle(x0, y0, x1, y1, outline="blue")
+        x0 += rect_w - rect_h
+        rect_w, rect_h = rect_h, rect_w - rect_h
+
+    text = f"Energy: {energy_level} - {meaning}"
+    canvas.create_text(10, 10, anchor="nw", text=text, fill="darkgreen")
+    canvas.create_text(10, 30, anchor="nw", text=words, fill="darkgreen")
+
+    root.mainloop()
 
 
 def draw_ascii(points, width: int = 60, height: int = 30) -> None:
@@ -48,12 +116,12 @@ def get_weather() -> str:
     return "Unknown"
 
 
-def generate_art(feeling: int, words: str) -> None:
-    """Generate and display deterministic ASCII art."""
+def generate_art(energy_level: int, words: str) -> None:
+    """Generate and display deterministic art."""
     date_str = datetime.date.today().strftime("%Y%m%d")
     weather = get_weather()
 
-    seed_input = f"{date_str}-{weather}-{feeling}-{words}"
+    seed_input = f"{date_str}-{weather}-{energy_level}-{words}"
     seed = simple_hash(seed_input)
 
     if np is not None:
@@ -91,14 +159,15 @@ def generate_art(feeling: int, words: str) -> None:
         denom_y = max_y - min_y or 1.0
         points = [((x - min_x) / denom_x, (y - min_y) / denom_y) for x, y in points]
 
-    print(f"{date_str} - {weather}\nFeeling: {feeling}\n{words}")
-    draw_ascii(points)
+    meaning = DIGIT_MEANINGS.get(energy_level % 10, "")
+    print(f"{date_str} - {weather}\nEnergy level: {energy_level}\n{meaning}\n{words}")
+    draw_window(points, energy_level, words, meaning)
 
 
 def main():
-    feeling = int(input("Feeling (1-100): "))
+    energy = int(input("Energy level (0-9): "))
     words = input("Words (up to 100): ")[:100]
-    generate_art(feeling, words)
+    generate_art(energy, words)
     input("Press Enter to exit...")
 
 
