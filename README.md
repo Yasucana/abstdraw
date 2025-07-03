@@ -23,7 +23,7 @@ pip install numpy requests
 
 ## Usage
 
-Run the script and follow the prompts for the energy level and words:
+Run the script and follow the prompts for the energy level, words, and optional style:
 
 ```bash
 python abstdraw.py
@@ -32,4 +32,6 @@ python abstdraw.py
 The generated abstract art will open in a window.  If `tkinter` is unavailable
 the program falls back to ASCII art output.  Colors vary with the energy level,
 the diversity of the words adds more chaotic noise, and higher energy values
-add more obstacle rectangles to the drawing.
+add more obstacle rectangles to the drawing.  You can also select a style
+(`logistic`, `neoplastic`, `action`, or `kandinsky`) to influence the pattern
+generation.  Choosing `auto` picks a style at random.
