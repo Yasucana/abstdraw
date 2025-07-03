@@ -34,4 +34,6 @@ the program falls back to ASCII art output.  Colors vary with the energy level,
 the diversity of the words adds more chaotic noise, and higher energy values
 add more obstacle rectangles to the drawing.  You can also select a style
 (`logistic`, `neoplastic`, `action`, or `kandinsky`) to influence the pattern
-generation.  Choosing `auto` picks a style at random.
+generation.  Choosing `auto` picks a style at random.  Each style now also
+draws extra shapes such as circles, rectangles, or triangles in a variety of
+colors to evoke different modern art movements.
