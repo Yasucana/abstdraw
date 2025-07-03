@@ -1,5 +1,8 @@
 import datetime
+import math
 import random
+
+# プログラムは正常に動いています。描ける絵をもっと芸術的にしたいです。もっと抽象的な絵が描けるように純粋抽象絵画、新造形主義、アクション・ペインティング、カジミール・マレーヴィチ、カンディンスキー、などを学んで描けるようにしてください
 
 DIGIT_MEANINGS = {
     0: "Cycle - eternity, wholeness, or return",
@@ -129,39 +132,91 @@ def get_weather() -> str:
     return "Unknown"
 
 
-def generate_art(energy_level: int, words: str, max_lines: int = 1000) -> None:
+def logistic_points(rng, chaos, count):
+    x = rng.random()
+    r = 3.5 + 0.5 * chaos
+    pts = []
+    for _ in range(count):
+        x = r * x * (1 - x)
+        y = r * x * (1 - x)
+        pts.append((x, y))
+    return pts
+
+
+def neoplastic_points(rng, chaos, count):
+    pts = []
+    for _ in range(count // 10 + 1):
+        if rng.random() < 0.5:
+            y = rng.random()
+            for _ in range(10):
+                x = rng.random()
+                pts.append((x, min(1.0, max(0.0, y + rng.uniform(-0.1, 0.1) * chaos))))
+        else:
+            x = rng.random()
+            for _ in range(10):
+                y = rng.random()
+                pts.append((min(1.0, max(0.0, x + rng.uniform(-0.1, 0.1) * chaos)), y))
+    return pts[:count]
+
+
+def action_points(rng, chaos, count):
+    x = rng.random()
+    y = rng.random()
+    pts = []
+    for _ in range(count):
+        x += rng.uniform(-0.2, 0.2) * (1 + chaos)
+        y += rng.uniform(-0.2, 0.2) * (1 + chaos)
+        pts.append((x, y))
+    return pts
+
+
+def kandinsky_points(rng, chaos, count):
+    theta = rng.random() * 2 * math.pi
+    r = 0.1
+    pts = []
+    for _ in range(count):
+        theta += 0.1 + chaos * rng.random()
+        r += 0.005 + chaos * rng.random() * 0.01
+        pts.append((0.5 + r * math.cos(theta), 0.5 + r * math.sin(theta)))
+    return pts
+
+
+def generate_art(energy_level: int, words: str, style: str = "auto", max_lines: int = 1000) -> None:
     date_str = datetime.date.today().strftime("%Y%m%d")
     weather = get_weather()
-    seed_input = f"{date_str}-{weather}-{energy_level}-{words}"
+    seed_input = f"{date_str}-{weather}-{energy_level}-{words}-{style}"
     seed = simple_hash(seed_input)
 
     if np is not None:
         rng = np.random.default_rng(seed)
-        x = rng.random()
     else:
         rng = random.Random(seed)
-        x = rng.random()
 
     chaos = min(1.0, len(set(words.lower())) / 10)
-    r = 3.5 + 0.5 * chaos
-    points = []
-    for _ in range(5000):
-        x = r * x * (1 - x)
-        y = r * x * (1 - x)
-        points.append((x, y))
 
-    if np is not None:
-        def noise():
-            return rng.uniform(-(0.1 + 0.3 * chaos), 0.1 + 0.3 * chaos)
+    styles = {
+        "logistic": logistic_points,
+        "neoplastic": neoplastic_points,
+        "action": action_points,
+        "kandinsky": kandinsky_points,
+    }
 
-        points = [(x + noise(), y + noise()) for (x, y) in points]
-        xs = [p[0] for p in points]
-        ys = [p[1] for p in points]
-        min_x, max_x = min(xs), max(xs)
-        min_y, max_y = min(ys), max(ys)
-        denom_x = max_x - min_x or 1.0
-        denom_y = max_y - min_y or 1.0
-        points = [((x - min_x) / denom_x, (y - min_y) / denom_y) for x, y in points]
+    if style == "auto":
+        style = rng.choice(list(styles.keys())) if np is not None else random.choice(list(styles.keys()))
+
+    points = styles.get(style, logistic_points)(rng, chaos, 5000)
+
+    def noise():
+        return rng.uniform(-(0.1 + 0.3 * chaos), 0.1 + 0.3 * chaos)
+
+    points = [(x + noise(), y + noise()) for (x, y) in points]
+    xs = [p[0] for p in points]
+    ys = [p[1] for p in points]
+    min_x, max_x = min(xs), max(xs)
+    min_y, max_y = min(ys), max(ys)
+    denom_x = max_x - min_x or 1.0
+    denom_y = max_y - min_y or 1.0
+    points = [((x - min_x) / denom_x, (y - min_y) / denom_y) for x, y in points]
 
     color = COLOR_MAP.get(energy_level % 10, "black")
 
@@ -186,7 +241,8 @@ def main():
     except ValueError:
         max_lines = 1000
     max_lines = max(1, min(5000, max_lines))
-    generate_art(energy, words, max_lines=max_lines)
+    style = input("Style (logistic/neoplastic/action/kandinsky/auto): ") or "auto"
+    generate_art(energy, words, style=style, max_lines=max_lines)
     input("Press Enter to exit...")
 
 
